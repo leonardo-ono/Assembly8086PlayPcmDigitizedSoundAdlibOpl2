@@ -34,3 +34,5 @@ and assemble it again:
 
 
 use: nasm pcmadlib.asm -o pcmadlib.com -f bin
+
+tested on DOSBox and on a real machine (Pentium III 700Mhz with Sound Blaster 16)
