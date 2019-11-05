@@ -3,9 +3,9 @@ Play Pcm Digitized Sound through Adlib OPL2 sound card.
 
 target OS: DOS
 
-assembler: nasm
+assembler: nasm 2.14.02
 
-executable: .COM
+executable format: *.COM
 
 note:
 for purpose of this test, i've implemented a very horrible delay that depends on the speed of your computer.
