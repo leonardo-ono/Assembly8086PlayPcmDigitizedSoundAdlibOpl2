@@ -18,16 +18,20 @@ and assemble it again:
     ...
     ...
     ...
-		mov bl, 0b0h
-		mov bh, 2eh
-    call write_adlib
+		; bl = register
+		; bh = value
+		mov bl, 40h
+		; mov bh, -- -> bh already has the 6-bit sample
+		call write_adlib
 
-		mov cx, 40000 ; <-- change this value according to the speed of your computer
-	.delay3:
+		mov cx, 10000 ; <-- change this value according to the speed of your computer
+	.delay:
 		nop
-		loop .delay3
-				
-		mov bl, 0b0h
+		loop .delay
+
+		mov ah, 1
+		int 16h
+		jnz .exit
     ...
     ...
     ...
