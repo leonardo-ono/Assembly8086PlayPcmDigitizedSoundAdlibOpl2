@@ -11,7 +11,7 @@ start:
 		mov al, 'A'
 		int 10h
 		
-		;call reset_all_registers
+		call reset_all_registers
 
 		; bl = register
 		; bh = value
