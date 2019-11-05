@@ -2,7 +2,9 @@
 Play Pcm Digitized Sound through Adlib OPL2 sound card.
 
 target OS: DOS
+
 assembler: nasm
+
 executable: .COM
 
 note:
