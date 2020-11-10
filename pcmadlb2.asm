@@ -1,18 +1,18 @@
 ; Written by Leonardo Ono (ono.leo@gmail.com)
-; 14 feb 2020
-; update: this program uses timer 0
+; 10 nov 2020
+; Target OS: DOS
+; use: nasm pcmadlb2.asm -o pcmadlb2.com -f bin
+; 
+; update: 14 feb 2020 - this program uses timer 0
+;         10 nov 2020 - finally it works thanks to Jim Leonard.
+;
 ; Reference: http://www.dcee.net/Files/Programm/Sound/adldigi.arj
+;            Thanks to Jim Leonard for 'wait until 952h timer ticks' routine
 
 		bits 16
 		org 100h
 
 start:
-
-		mov ah, 0eh
-		mov al, 'A'
-		int 10h
-		
-		call start_fast_clock
 		
 		call reset_all_registers
 
@@ -54,24 +54,34 @@ start:
 		mov bh, 2eh
 		call write_adlib
 
-		mov ah, 0eh
-		mov al, 'B'
-		int 10h
+		; --- wait until 952h (2386) timer ticks have passed --
+		; --- kindly provided by Jim Leonard --
+
+                cli                             ;disable interrupts
+
+                mov     al,0                    ;reprogram timer
+                out     43h,al                  ;timer-0 count-mode
+                in      al,40h                  ;read low-byte count
+                mov     bl,al                   ;save in BL
+                in      al,40h                  ;read high-byte count
+                mov     bh,al                   ;save in BH
+	.delay3:
+
+                mov     al,0                    ;reprogram timer
+                out     43h,al                  ;timer-0 count-mode
+                in      al,40h                  ;read low-byte count
+                mov     cl,al                   ;save in CL
+                in      al,40h                  ;read high-byte count
+                mov     ch,al                   ;save in CH
+                neg     cx
+                add	cx, bx                  ;compute clocks gone by
+                cmp     cx,2386
+                jb      .delay3
+
+		sti
+
+		; ---
 		
-	; wait until 952h 8253 timer  ticks  have passed <-- ??? didn't work
-	; system timer count at memory location 0000:046ch	
-		mov ax, 0
-		mov es, ax
-		mov eax, [es:046ch]
-		add eax, 2
-	.delay2:
-		cmp eax, [es:046ch]
-		jae .delay2
-		
-		mov ah, 0eh
-		mov al, 'C'
-		int 10h		
-				
 		mov bl, 0b0h
 		mov bh, 20h
 		call write_adlib
@@ -80,7 +90,10 @@ start:
 		mov bh, 0h
 		call write_adlib
 
-		; start playback
+
+		call start_fast_clock
+
+		; --- start playback --- 
 		
 		mov si, 0
 
