@@ -9,9 +9,10 @@
 ; Reference: http://www.dcee.net/Files/Programm/Sound/adldigi.arj
 ;            Thanks to Jim Leonard for 'wait until 952h timer ticks' routine
 
+		cpu 8086
 		bits 16
 		org 100h
-
+		
 start:
 		
 		call reset_all_registers
@@ -57,26 +58,26 @@ start:
 		; --- wait until 952h (2386) timer ticks have passed --
 		; --- kindly provided by Jim Leonard --
 
-                cli                             ;disable interrupts
+		cli 		                    ;disable interrupts
 
-                mov     al,0                    ;reprogram timer
-                out     43h,al                  ;timer-0 count-mode
-                in      al,40h                  ;read low-byte count
-                mov     bl,al                   ;save in BL
-                in      al,40h                  ;read high-byte count
-                mov     bh,al                   ;save in BH
+		mov     al,0                    ;reprogram timer
+		out     43h,al                  ;timer-0 count-mode
+		in      al,40h                  ;read low-byte count
+		mov     bl,al                   ;save in BL
+		in      al,40h                  ;read high-byte count
+		mov     bh,al                   ;save in BH
 	.delay3:
 
-                mov     al,0                    ;reprogram timer
-                out     43h,al                  ;timer-0 count-mode
-                in      al,40h                  ;read low-byte count
-                mov     cl,al                   ;save in CL
-                in      al,40h                  ;read high-byte count
-                mov     ch,al                   ;save in CH
-                neg     cx
-                add	cx, bx                  ;compute clocks gone by
-                cmp     cx,2386
-                jb      .delay3
+		mov     al,0                    ;reprogram timer
+		out     43h,al                  ;timer-0 count-mode
+		in      al,40h                  ;read low-byte count
+		mov     cl,al                   ;save in CL
+		in      al,40h                  ;read high-byte count
+		mov     ch,al                   ;save in CH
+		neg     cx
+		add		cx, bx                  ;compute clocks gone by
+		cmp     cx,2386
+		jb      .delay3
 
 		sti
 
@@ -94,6 +95,9 @@ start:
 		call start_fast_clock
 
 		; --- start playback --- 
+		call get_current_time
+		mov [last_time + 2], dx
+		mov [last_time], ax
 		
 		mov si, 0
 
@@ -104,7 +108,9 @@ start:
 		mov bl, 255
 		sub bl, bh ; lowest value has the highest volume
 		mov bh, bl
-		shr bh, 2 ; convert to 6-bit sample
+		
+		mov cl, 2
+		shr bh, cl ; convert to 6-bit sample
 
 		
 		; bl = register
@@ -115,10 +121,13 @@ start:
 		
 	.delay:
 		call get_current_time
-		cmp eax, [last_time]
+		cmp dx, [last_time + 2]
+		jne .break_delay
+		cmp ax, [last_time]
 		jbe .delay
-		mov [last_time], eax
-			
+	.break_delay:
+		mov [last_time + 2], dx
+		mov [last_time], ax
 
 		mov ah, 1
 		int 16h
@@ -150,7 +159,13 @@ reset_all_registers:
 ; bl = register
 ; bh = value
 write_adlib:
-		pusha
+		push ax
+		push bx
+		push cx
+		push dx
+		push bp
+		push si
+		push di
 		
 		mov dx, 388h
 		mov al, bl
@@ -172,8 +187,14 @@ write_adlib:
 	.delay_2:
 		in al, dx
 		loop .delay_2
-		
-		popa
+
+		pop di
+		pop si
+		pop bp
+		pop dx
+		pop cx
+		pop bx
+		pop ax
 		ret
 			
 ; count = 1193180 / sampling_rate
@@ -201,13 +222,16 @@ stop_fast_clock:
 		sti
 		ret		
 		
-; eax = get current time
+; dx:ax = get current time
 get_current_time:
+		cli
 		push es
 		mov ax, 0
 		mov es, ax
-		mov eax, [es:46ch]
+		mov ax, [es:46ch]
+		mov dx, [es:46ch + 2]
 		pop es
+		sti
 		ret
 			
 last_time dd 0			
